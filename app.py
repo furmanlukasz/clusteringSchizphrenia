@@ -179,8 +179,9 @@ if uploaded_file:
     # Note: Replace all `plt.show()` with `st.pyplot()`
     # Create the plots with dendrogram, PCA, and UMAP visualizations
     nrows = 3 if show_pca and show_umap else 2 if show_pca or show_umap else 1 # Number of rows in the plot
+    hight = 15 if show_pca and show_umap else 10 if show_pca or show_umap else 5 # Height of the plot
     for data_group, title in zip([data_schizophrenia, data_control, data_full], ["Schizophrenia", "Control", "All Subjects"]):
-        fig, axes = plt.subplots(nrows=nrows, ncols=len(available_bands), figsize=(36, 15))
+        fig, axes = plt.subplots(nrows=nrows, ncols=len(available_bands), figsize=(36, hight))
         fig.suptitle(title, fontsize=45)
         
         # Ensure axes is 2D
