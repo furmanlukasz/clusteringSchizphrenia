@@ -184,7 +184,7 @@ if uploaded_file:
     hight = 15 if show_pca and show_umap else 10 if show_pca or show_umap else 5 # Height of the plot
     for data_group, title in zip([data_schizophrenia, data_control, data_full], ["Schizophrenia", "Control", "All Subjects"]):
         fig, axes = plt.subplots(nrows=nrows, ncols=len(available_bands), figsize=(36, hight))
-        fig.suptitle(title, fontsize=45)
+        fig.suptitle(title, fontsize=25)
         
         # Ensure axes is 2D
         if nrows == 1:
