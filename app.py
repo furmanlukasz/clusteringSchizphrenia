@@ -23,6 +23,14 @@ st.sidebar.subheader("Clustering Parameters")
 n_clusters = st.sidebar.slider("Number of Clusters (KMeans)", 2, 20, 5)
 n_dendro_clusters = st.sidebar.slider("Number of Clusters (Dendrogram)", 2, 20, 5)
 
+# Add option to choose linkage method for dendrogram
+linkage_methods = ["ward", "single", "complete", "average"]
+selected_linkage_method = st.sidebar.selectbox("Linkage Method for Dendrogram", linkage_methods, 0)
+
+# Checkbox to toggle PCA and UMAP visualization
+show_pca = st.sidebar.checkbox("Show PCA Visualization", False)
+show_umap = st.sidebar.checkbox("Show UMAP Visualization", False)
+
 # Load the data
 def load_data(uploaded_file):
     data = pd.read_csv(uploaded_file)
@@ -48,16 +56,16 @@ def plot_umap_embedding(embedding, kmeans_labels, ax, title):
             transform=ax.transAxes, ha='right', va='bottom', size=10)
     ax.set_title(title)
 
-def plot_dendrogram_colored_ticks(band_data, ax, title):
+def plot_dendrogram_colored_ticks(band_data, ax, title, method='ward'):
     """
     Plot the dendrogram with correctly colored tick numbers for the "All Subjects" group.
     """
     # Hierarchical clustering
-    Z = linkage(band_data, method='ward')
+    Z = linkage(band_data, method=method)
     
     # Plot the dendrogram
     ddata = dendrogram(Z, ax=ax, leaf_rotation=90)
-    ax.set_title(title + " Dendrogram")
+    ax.set_title(title + " Dendrogram (" + method + " linkage)")
     ax.set_xlabel("Sample Index")
     ax.set_ylabel("Distance")
     
@@ -76,19 +84,20 @@ def plot_dendrogram_colored_ticks(band_data, ax, title):
         elif label_idx in schizophrenia_indices:
             label.set_color('red')
 
-def plot_dendrogram_and_pca_with_correct_colored_ticks(band_data, ax_dendro, ax_pca, title, color_ticks=False):
+def plot_dendrogram_and_pca_with_correct_colored_ticks(band_data, ax_dendro, ax_pca, title, color_ticks=False, method='ward'):
     """
     Plot the dendrogram with optionally colored tick numbers and PCA visualization on the given axes.
     """
     # Hierarchical clustering
-    Z = linkage(band_data, method='ward')
+    Z = linkage(band_data, method=method)
     
     # Plot the dendrogram
     ddata = dendrogram(Z, ax=ax_dendro, leaf_rotation=90)
-    ax_dendro.set_title(title + " Dendrogram")
+    ax.set_title(str(title) + " Dendrogram (" + str(method) + " linkage)")
     ax_dendro.set_xlabel("Sample Index")
     ax_dendro.set_ylabel("Distance")
     
+
     if color_ticks:
         # Color the tick numbers based on control and schizophrenia subjects
         control_indices = data_control.index.to_list()
@@ -104,6 +113,9 @@ def plot_dendrogram_and_pca_with_correct_colored_ticks(band_data, ax_dendro, ax_
                 label.set_color('black')
             elif label_idx in schizophrenia_indices:
                 label.set_color('red')
+    return Z
+
+def plot_band_pca(band_data, Z, ax_pca, title):
     
     # Cut the dendrogram to obtain 3 clusters
     labels = fcluster(Z, t=n_dendro_clusters, criterion='maxclust')
@@ -112,9 +124,10 @@ def plot_dendrogram_and_pca_with_correct_colored_ticks(band_data, ax_dendro, ax_
     # Use PCA to reduce the data to 2D
     pca = PCA(n_components=2)
     band_pca = pca.fit_transform(band_data.drop('Cluster', axis=1))
-    
+    # return band_pca
+
     # Create a scatter plot for PCA reduced data
-    scatter = ax_pca.scatter(band_pca[:, 0], band_pca[:, 1], c=band_data['Cluster'], cmap='rainbow')
+    ax_pca.scatter(band_pca[:, 0], band_pca[:, 1], c=band_data['Cluster'], cmap='rainbow')
     ax_pca.set_title(title + " 2D PCA")
     ax_pca.set_xlabel("Principal Component 1")
     ax_pca.set_ylabel("Principal Component 2")
@@ -141,7 +154,7 @@ if uploaded_file:
     ], axis=1)
 
     fig, ax = plt.subplots(figsize=(16, 8))
-    plot_dendrogram_colored_ticks(all_bands_data, ax, "All Bands Combined")
+    plot_dendrogram_colored_ticks(all_bands_data, ax, "All Bands Combined", method=selected_linkage_method)
     plt.tight_layout()
 
     # Save the dendrogram plot to a PNG file
@@ -165,21 +178,49 @@ if uploaded_file:
 
     # Note: Replace all `plt.show()` with `st.pyplot()`
     # Create the plots with dendrogram, PCA, and UMAP visualizations
+    nrows = 3 if show_pca and show_umap else 2 if show_pca or show_umap else 1 # Number of rows in the plot
     for data_group, title in zip([data_schizophrenia, data_control, data_full], ["Schizophrenia", "Control", "All Subjects"]):
-        fig, axes = plt.subplots(nrows=3, ncols=len(available_bands), figsize=(36, 15))
+        fig, axes = plt.subplots(nrows=nrows, ncols=len(available_bands), figsize=(36, 15))
         fig.suptitle(title, fontsize=45)
+        
+        # Ensure axes is 2D
+        if nrows == 1:
+            axes = axes.reshape(1, -1)
 
         # Create band data based on detected bands for the current data group
         bands = [(band.capitalize(), data_group.loc[:, data_group.columns.str.startswith(f'avpp_{band}')]) for band in available_bands]
 
+        # Configure the axes based on the selected visualizations
+        axes_mapping = [0]  # dendrogram axes index is always 0
+        if show_pca:
+            axes_mapping.append(len(axes_mapping))
+        if show_umap:
+            axes_mapping.append(len(axes_mapping))
+
         # Plot dendrogram, PCA, and UMAP visualizations for each band
-        for (band_name, band_data), ax_dendro, ax_pca, ax_umap in zip(bands, axes[0], axes[1], axes[2]):
-            # Dendrogram and PCA plots using previous functions
-            plot_dendrogram_and_pca_with_correct_colored_ticks(band_data.copy(), ax_dendro, ax_pca, band_name, title=="All Subjects")
+        for col, (band_name, band_data) in enumerate(bands):
+            ax_dendro = axes[axes_mapping[0]][col]
+            ax_dendro.set_title(band_name)
+            # Dendrogram plots using previous functions
+            Z = plot_dendrogram_and_pca_with_correct_colored_ticks(band_data.copy(), ax_dendro, band_name, title==title, method=selected_linkage_method)
             
-            # UMAP plot
-            embedding, kmeans_labels = umap_and_kmeans(band_data)
-            plot_umap_embedding(embedding, kmeans_labels, ax_umap, band_name + " 2D UMAP")
+            if show_pca:
+                ax_pca = axes[axes_mapping[1]][col]
+                plot_band_pca(band_data.copy(), Z, ax_pca, title)
+                # Compute PCA only if the checkbox is checked
+                # pca = PCA(n_components=2)
+                # band_pca = pca.fit_transform(band_data.drop('Cluster', axis=1))
+                # Create a scatter plot for PCA reduced data
+                # scatter = ax_pca.scatter(band_pca[:, 0], band_pca[:, 1], c=band_data['Cluster'], cmap='rainbow')
+                # ax_pca.set_title(band_name + " 2D PCA")
+                # ax_pca.set_xlabel("Principal Component 1")
+                # ax_pca.set_ylabel("Principal Component 2")
+                
+            if show_umap:
+                ax_umap = axes[axes_mapping[-1]][col]
+                # Compute and display UMAP only if the checkbox is checked
+                embedding, kmeans_labels = umap_and_kmeans(band_data)
+                plot_umap_embedding(embedding, kmeans_labels, ax_umap, band_name + " 2D UMAP")
 
         plt.tight_layout()
         plt.subplots_adjust(top=0.85)
@@ -188,6 +229,7 @@ if uploaded_file:
         fig.savefig(plot_filename, dpi=300)
         # plt.show()
         st.pyplot()
+        plt.close(fig)
         
         # Provide a download button for the PNG file
         with open(plot_filename, "rb") as f:
