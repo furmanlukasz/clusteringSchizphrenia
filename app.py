@@ -100,10 +100,10 @@ def plot_dendrogram_and_pca_with_correct_colored_ticks(band_data, ax_dendro, ax_
     ax_dendro.set_ylabel("Distance")
     
 
-    if color_ticks:
+    if color_ticks and full_data is not None:
         # Color the tick numbers based on control and schizophrenia subjects
-        control_indices = data_control.index.to_list()
-        schizophrenia_indices = data_schizophrenia.index.to_list()
+        control_indices = full_data[full_data['Group'] == 0].index.to_list()
+        schizophrenia_indices = full_data[full_data['Group'] == 1].index.to_list()
 
         # Get the x-tick labels (leaf labels) from the dendrogram
         leaf_labels = ddata['leaves']
@@ -183,7 +183,7 @@ if uploaded_file:
     nrows = 3 if show_pca and show_umap else 2 if show_pca or show_umap else 1 # Number of rows in the plot
     hight = 15 if show_pca and show_umap else 10 if show_pca or show_umap else 5 # Height of the plot
     for data_group, title in zip([data_schizophrenia, data_control, data_full], ["Schizophrenia", "Control", "All Subjects"]):
-        fig, axes = plt.subplots(nrows=nrows, ncols=len(available_bands), figsize=(36, hight))
+        fig, axes = plt.subplots(nrows=nrows, ncols=len(available_bands), figsize=(36, hight), dp)
         fig.suptitle(title, fontsize=25)
         
         # Ensure axes is 2D
