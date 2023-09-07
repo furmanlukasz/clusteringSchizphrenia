@@ -174,7 +174,7 @@ if uploaded_file:
             mime="image/png"
         )
 
-    st.pyplot()
+    st.pyplot(fig)
     st.write("EDA - Exploratory Data Analysis")
     # Detect available bands from column names
     bands_list = ['delta', 'theta', 'alpha', 'beta', 'gamma']
