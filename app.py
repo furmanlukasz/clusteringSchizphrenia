@@ -207,18 +207,9 @@ if uploaded_file:
             if show_pca:
                 ax_pca = axes[axes_mapping[1]][col]
                 plot_band_pca(band_data.copy(), Z, ax_pca, title)
-                # Compute PCA only if the checkbox is checked
-                # pca = PCA(n_components=2)
-                # band_pca = pca.fit_transform(band_data.drop('Cluster', axis=1))
-                # Create a scatter plot for PCA reduced data
-                # scatter = ax_pca.scatter(band_pca[:, 0], band_pca[:, 1], c=band_data['Cluster'], cmap='rainbow')
-                # ax_pca.set_title(band_name + " 2D PCA")
-                # ax_pca.set_xlabel("Principal Component 1")
-                # ax_pca.set_ylabel("Principal Component 2")
                 
             if show_umap:
                 ax_umap = axes[axes_mapping[-1]][col]
-                # Compute and display UMAP only if the checkbox is checked
                 embedding, kmeans_labels = umap_and_kmeans(band_data)
                 plot_umap_embedding(embedding, kmeans_labels, ax_umap, band_name + " 2D UMAP")
 
