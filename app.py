@@ -7,6 +7,8 @@ from sklearn.cluster import KMeans
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 from sklearn.decomposition import PCA
 
+# Set width mode to wide to display plots better
+st.set_page_config(layout="wide")
 # Streamlit Configuration
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
