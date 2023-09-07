@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 from sklearn.decomposition import PCA
+import webbrowser
+
 
 # Set width mode to wide to display plots better
 st.set_page_config(layout="wide")
@@ -86,7 +88,7 @@ def plot_dendrogram_colored_ticks(band_data, ax, title, method='ward'):
         elif label_idx in schizophrenia_indices:
             label.set_color('red')
 
-def plot_dendrogram_and_pca_with_correct_colored_ticks(band_data, ax_dendro, ax_pca, title, color_ticks=False, method='ward'):
+def plot_dendrogram_and_pca_with_correct_colored_ticks(band_data, ax_dendro, title, color_ticks=False, method='ward'):
     """
     Plot the dendrogram with optionally colored tick numbers and PCA visualization on the given axes.
     """
@@ -100,10 +102,10 @@ def plot_dendrogram_and_pca_with_correct_colored_ticks(band_data, ax_dendro, ax_
     ax_dendro.set_ylabel("Distance")
     
 
-    if color_ticks and full_data is not None:
+    if color_ticks:
         # Color the tick numbers based on control and schizophrenia subjects
-        control_indices = full_data[full_data['Group'] == 0].index.to_list()
-        schizophrenia_indices = full_data[full_data['Group'] == 1].index.to_list()
+        control_indices = data_control.index.to_list()
+        schizophrenia_indices = data_schizophrenia.index.to_list()
 
         # Get the x-tick labels (leaf labels) from the dendrogram
         leaf_labels = ddata['leaves']
@@ -183,7 +185,7 @@ if uploaded_file:
     nrows = 3 if show_pca and show_umap else 2 if show_pca or show_umap else 1 # Number of rows in the plot
     hight = 15 if show_pca and show_umap else 10 if show_pca or show_umap else 5 # Height of the plot
     for data_group, title in zip([data_schizophrenia, data_control, data_full], ["Schizophrenia", "Control", "All Subjects"]):
-        fig, axes = plt.subplots(nrows=nrows, ncols=len(available_bands), figsize=(36, hight), dp)
+        fig, axes = plt.subplots(nrows=nrows, ncols=len(available_bands), figsize=(36, hight))
         fig.suptitle(title, fontsize=25)
         
         # Ensure axes is 2D
@@ -204,8 +206,9 @@ if uploaded_file:
         for col, (band_name, band_data) in enumerate(bands):
             ax_dendro = axes[axes_mapping[0]][col]
             ax_dendro.set_title(band_name)
+            color_ticks = True if title == "All Subjects" else False
             # Dendrogram plots using previous functions
-            Z = plot_dendrogram_and_pca_with_correct_colored_ticks(band_data.copy(), ax_dendro, band_name, title==title, method=selected_linkage_method)
+            Z = plot_dendrogram_and_pca_with_correct_colored_ticks(band_data.copy(), ax_dendro, band_name, color_ticks, method=selected_linkage_method)
             
             if show_pca:
                 ax_pca = axes[axes_mapping[1]][col]
@@ -220,9 +223,11 @@ if uploaded_file:
         plt.subplots_adjust(top=0.85)
         # Save the plot to a PNG file
         plot_filename = f"{title.replace(' ', '_')}_plot.png"
-        fig.savefig(plot_filename, dpi=300)
+        fig.savefig(plot_filename, dpi=600)
         # plt.show()
-        st.pyplot()
+        # st.pyplot()
+        # st.image(plot_filename, use_column_width=True, clamp=True)
+        st.pyplot(fig)
         plt.close(fig)
         
         # Provide a download button for the PNG file
