@@ -230,6 +230,7 @@ if uploaded_file:
         st.pyplot(fig)
         plt.close(fig)
         
+        
         # Provide a download button for the PNG file
         with open(plot_filename, "rb") as f:
             btn = st.download_button(
