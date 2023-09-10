@@ -40,12 +40,6 @@ def load_data(uploaded_file):
     data = pd.read_csv(uploaded_file)
     return data
 
-
-n_neighbors=5
-min_dist=0.3
-n_clusters=5
-n_dendro_clusters=5
-
 # Function to perform UMAP embedding and K-means clustering
 def umap_and_kmeans(band_data, n_neighbors=n_neighbors, min_dist=min_dist, n_clusters=n_clusters):
     embedding = umap.UMAP(n_neighbors=n_neighbors, min_dist=min_dist, random_state=42).fit_transform(band_data)
@@ -229,7 +223,6 @@ if uploaded_file:
         # st.image(plot_filename, use_column_width=True, clamp=True)
         st.pyplot(fig)
         plt.close(fig)
-        
         
         # Provide a download button for the PNG file
         with open(plot_filename, "rb") as f:
